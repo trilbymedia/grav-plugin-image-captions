@@ -31,14 +31,14 @@ class ImageCaptionsPlugin extends Plugin
         }
 
         $this->enable([
-            'onPageContentProcessed' => ['onPageContentProcessed', 0]
+            'onPageProcessed' => ['onPageProcessed', 0]
         ]);
     }
 
     /**
      * @param Event $e
      */
-    public function onPageContentProcessed(Event $e)
+    public function onPageProcessed(Event $e)
     {
         // Load jQuery
         $this->grav['assets']->addJs('jquery');

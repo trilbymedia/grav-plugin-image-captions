@@ -1,8 +1,8 @@
 # Image Captions Plugin
 
-**This README.md file should be modified to describe the features, installation, configuration, and general usage of this plugin.**
+Looks for images with defined title attribute and converts them to the figcaption.
 
-The **Image Captions** Plugin is for [Grav CMS](http://github.com/getgrav/grav). Image Captions for Grav CMS
+The **Image Captions** Plugin is for [Grav CMS](http://github.com/getgrav/grav).
 
 ## Installation
 
@@ -10,7 +10,7 @@ Installing the Image Captions plugin can be done in one of two ways. The GPM (Gr
 
 ### GPM Installation (Preferred)
 
-The simplest way to install this plugin is via the [Grav Package Manager (GPM)](http://learn.getgrav.org/advanced/grav-gpm) through your system's terminal (also called the command line).  From the root of your Grav install type:
+The simplest way to install this plugin is via the [Grav Package Manager (GPM)](http://learn.getgrav.org/advanced/grav-gpm) through your system's terminal (also called the command line). From the root of your Grav install type:
 
     bin/gpm install image-captions
 
@@ -22,9 +22,7 @@ To install this plugin, just download the zip version of this repository and unz
 
 You should now have all the plugin files under
 
-    /your/site/grav/user/plugins/image-captions
-	
-> NOTE: This plugin is a modular component for Grav which requires [Grav](http://github.com/getgrav/grav) and the [Error](https://github.com/getgrav/grav-plugin-error) and [Problems](https://github.com/getgrav/grav-plugin-problems) to operate.
+    /your/site/grav/user/plugins/image-captions	
 
 ## Configuration
 
@@ -36,13 +34,18 @@ Here is the default configuration and an explanation of available options:
 enabled: true
 ```
 
-## Usage
+Enables and disables the plugin.
 
-**Describe how to use the plugin.**
+```yaml
+scope: body
+```
 
-## Credits
+You can define the scope in which plugin will operate. This can be either an HTML tag (ie. `body`, `span`, `p`) or ID (ie. `#main-content`, `#footer`) or class (ie. `.my-paragraph`, `.image-block`)
 
-**Did you incorporate third-party code? Want to thank somebody?**
+```yaml
+class: caption
+```
+Only images with these classes will get their titles converted. You can combine multiple classes ie. `caption block` will look only for images with both classes applied
 
 ## To Do
 

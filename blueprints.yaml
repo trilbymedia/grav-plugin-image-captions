@@ -1,6 +1,6 @@
 name: Image Captions
 version: 0.1.0
-description: "Looks for images with title tags and converts them to the captions."
+description: "Looks for images with defined title attribute and converts them to the figcaptions."
 icon: image
 author:
   name: Jakub Baran (newkind)

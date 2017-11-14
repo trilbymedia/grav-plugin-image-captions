@@ -1,0 +1,36 @@
+name: Image Captions
+version: 0.1.0
+description: "Looks for images with title tags and converts them to the captions."
+icon: image
+author:
+  name: Jakub Baran (newkind)
+  email: newkind@gmail.com
+homepage: https://github.com/newkind/grav-plugin-image-captions
+keywords: image, caption, figure, figcaption, grav, plugin
+bugs: https://github.com/newkind/grav-plugin-image-captions/issues
+docs: https://github.com/newkind/grav-plugin-image-captions/blob/develop/README.md
+license: MIT
+
+form:
+  validation: strict
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    scope:
+      type: text
+      label: Scope
+      help: Only images found in the scope will have their captions parsed. This can be a HTML tag, id or class.
+      default: body
+    class:
+      type: text
+      label: Image Class
+      help: Only images with this classes will get their captions parsed.
+      default: caption

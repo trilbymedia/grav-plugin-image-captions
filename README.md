@@ -1,6 +1,6 @@
 # Image Captions Plugin
 
-Looks for images with defined title attribute and converts them to the figcaption.
+Looks for images with defined title attribute and converts them to figcaption.
 
 The **Image Captions** Plugin is for [Grav CMS](http://github.com/getgrav/grav).
 
@@ -45,9 +45,5 @@ You can define the scope in which plugin will operate. This can be either an HTM
 ```yaml
 class: caption
 ```
-Only images with these classes will get their titles converted. You can combine multiple classes ie. `caption block` will look only for images with both classes applied
-
-## To Do
-
-- [ ] Future plans, if any
+Only images with these classes will get their titles converted. You can combine multiple classes ie. `caption block` will look only for images with both classes applied.
 

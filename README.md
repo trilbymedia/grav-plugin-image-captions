@@ -39,7 +39,7 @@ This will install the Image Captions plugin into your `/user/plugins` directory 
 
 ### Manual Installation
 
-To install this plugin, just download the zip version of this repository and unzip it under `/your/site/grav/user/plugins`. Then, rename the folder to `image-captions`. You can find these files on [GitHub](https://github.com/newkind/grav-plugin-image-captions) or via [GetGrav.org](http://getgrav.org/downloads/plugins#extras).
+To install this plugin, just download the zip version of this repository and unzip it under `/your/site/grav/user/plugins`. Then, rename the folder to `image-captions`. You can find these files on [GitHub](https://github.com/trilbymedia/grav-plugin-image-captions) or via [GetGrav.org](http://getgrav.org/downloads/plugins#extras).
 
 You should now have all the plugin files under
 

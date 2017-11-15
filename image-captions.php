@@ -4,7 +4,6 @@ namespace Grav\Plugin;
 use DiDom\Document;
 use DiDom\Element;
 use Grav\Common\Plugin;
-use Grav\Common\Utils;
 use RocketTheme\Toolbox\Event\Event;
 
 /**

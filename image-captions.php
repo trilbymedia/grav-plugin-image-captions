@@ -1,6 +1,8 @@
 <?php
 namespace Grav\Plugin;
 
+use DiDom\Document;
+use DiDom\Element;
 use Grav\Common\Plugin;
 use RocketTheme\Toolbox\Event\Event;
 
@@ -30,41 +32,94 @@ class ImageCaptionsPlugin extends Plugin
             return;
         }
 
-        $this->enable([
-            'onPageInitialized' => ['onPageInitialized', 0]
-        ]);
+        include __DIR__.'/vendor/autoload.php';
+
+        if ($this->grav['config']->get('plugins.image-captions.entire_page')) {
+            $this->enable([
+                'onOutputGenerated' => ['onOutputGenerated', 0],
+                'onTwigSiteVariables' => ['onTwigSiteVariables', 0]
+            ]);
+        } else {
+            $this->enable([
+                'onPageContentProcessed' => ['onPageContentProcessed', 0],
+                'onTwigSiteVariables' => ['onTwigSiteVariables', 0]
+            ]);
+        }
+
+
     }
 
     /**
-     * @param Event $e
+     * Process on entire Grav output
      */
-    public function onPageInitialized(Event $e)
+    public function onOutputGenerated()
     {
-        // Load jQuery
-        $this->grav['assets']->addJs('jquery');
+        $this->grav->output = $this->processFigures($this->grav->output);
+    }
 
-        // Search scope
+    /**
+     * Process on page content
+     *
+     * @param Event $event
+     */
+    public function onPageContentProcessed(Event $event)
+    {
+        $page = $event['page'];
+
+        $content = $this->processFigures($page->content());
+
+        $page->setRawContent($content);
+
+    }
+
+    /**
+     * Load the CSS if configured
+     */
+    public function onTwigSiteVariables()
+    {
+
+        if ($this->config->get('plugins.image-captions.built_in_css')) {
+            $this->grav['assets']->add('plugin://image-captions/css/image-captions.css');
+        }
+    }
+
+    /**
+     * Process content and replace any items in scope with the figure/figcaption structure
+     *
+     * @param $content
+     * @return string
+     */
+    protected function processFigures($content)
+    {
+        $document = new Document($content);
+
         $scope = trim($this->grav['config']->get('plugins.image-captions.scope'));
-        ($scope == '') ? 'body' : $scope;
+        $figure_class = $this->grav['config']->get('plugins.image-captions.figure_class');
+        $figcaption_class = $this->grav['config']->get('plugins.image-captions.figcaption_class');
 
-        // Search class
-        $class = '.' . $this->grav['config']->get('plugins.image-captions.class');
-        $class = trim(str_replace(' ', '.', $class));
+        if (count($images = $document->find($scope)) > 0) {
+            foreach ($images as $image) {
+                $caption = $image->getAttribute('title');
+                if ($caption) {
+                    $figure_classes = [$figure_class];
 
-        $init = "jQuery(document).ready(function() {\n";
-        $init .= "    jQuery('". $scope ."').each(function(index) {\n";
-        $init .= "        var scope = jQuery(this);\n";
-        $init .= "        jQuery('img". $class ."', scope).each(function(index, element) {\n";
-        $init .= "            var image = jQuery(this);\n";
-        $init .= "            if (image.attr('title').length > 0) {\n";
-        $init .= "                var title = image.attr('title');\n";
-        $init .= "                image.wrap('<figure class=\"image-with-caption\"></figure>');\n";
-        $init .= "                image.after('<figcaption class=\"image-caption\">' + title + '</figcaption>');\n";
-        $init .= "            }\n";
-        $init .= "        });\n";
-        $init .= "    });\n";
-        $init .= "});\n";
+                    // If there are any `caption-*` classes on the imageadd them to the figure
+                    foreach (explode(' ', $image->getAttribute('class')) as $class) {
+                        if (preg_match('/^(caption-|figure-).*/', $class)) {
+                            $figure_classes[] = $class;
+                        }
+                    }
 
-        $this->grav['assets']->addInlineJs($init, ['group' => 'bottom']);
+                    $figcaption = new Element('figcaption',$caption, ['class' => $figcaption_class]);
+                    $items = [$image, $figcaption];
+                    $figure = new Element('figure', '', ['class' => implode(' ', $figure_classes)]);
+                    $figure->appendChild($items);
+                    $image->replace($figure);
+                }
+            }
+            return $document->html();
+        }
+
+        return $content;
     }
 }

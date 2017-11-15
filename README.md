@@ -1,8 +1,29 @@
 # Image Captions Plugin
 
-Looks for images with defined title attribute and converts them to figcaption.
+Looks for images with defined title attribute and converts them to figure/figcaption syntax.
 
 The **Image Captions** Plugin is for [Grav CMS](http://github.com/getgrav/grav).
+
+This plugin converts the HTML `<img>` tag into a `<figure>` tag with an `<figcaption>` caption.  For example, if you had the following Markdown in your content:
+
+```markdown
+![My Image Alt Text](myimage.jpg "My Image Caption")
+```
+
+The resulting HTML would be:
+
+```html
+<img src="/yourpage/mymage.jpg" alt="My Image Alt Text" title="My Image Caption" />
+```
+
+And with the plugin enabled, the result would be:
+
+```html
+<figure class="image-caption">
+    <img src="/yourpage/mymage.jpg" alt="My Image Alt Text" title="My Image Caption" />
+    <figcaption>My Image Caption</figcaption>
+</figure>
+```
 
 ## Installation
 
@@ -18,7 +39,7 @@ This will install the Image Captions plugin into your `/user/plugins` directory 
 
 ### Manual Installation
 
-To install this plugin, just download the zip version of this repository and unzip it under `/your/site/grav/user/plugins`. Then, rename the folder to `image-captions`. You can find these files on [GitHub](https://github.com/newkind/grav-plugin-image-captions) or via [GetGrav.org](http://getgrav.org/downloads/plugins#extras).
+To install this plugin, just download the zip version of this repository and unzip it under `/your/site/grav/user/plugins`. Then, rename the folder to `image-captions`. You can find these files on [GitHub](https://github.com/trilbymedia/grav-plugin-image-captions) or via [GetGrav.org](http://getgrav.org/downloads/plugins#extras).
 
 You should now have all the plugin files under
 
@@ -37,13 +58,64 @@ enabled: true
 Enables and disables the plugin.
 
 ```yaml
-scope: body
+built_in_css: true
 ```
 
-You can define the scope in which plugin will operate. This can be either an HTML tag (ie. `body`, `span`, `p`) or ID (ie. `#main-content`, `#footer`) or class (ie. `.my-paragraph`, `.image-block`)
+By default the plugin will load some basic css. See below for details
 
 ```yaml
-class: caption
+scope: img.caption
 ```
-Only images with these classes will get their titles converted. You can combine multiple classes ie. `caption block` will look only for images with both classes applied.
 
+You can define the scope in which plugin will operate. This typically should be something to define the specific images, for example the default is to find all `<img>` tags with class `caption`.  You could find all images without a class by simply setting this to `img`.
+
+```yaml
+entire_page: false
+```
+
+By default the plugin will only search the page content during the `onPageProcessed` event. This ensure maximum speed because the results are cached between page loads.  However you may have the need to use this plugin on pages where an image is output via Twig or other means, in this case you can set this to `true` and the entire page will be processed on each request.
+
+```yaml
+figure_class: image-caption
+```
+
+You can provide your own class for the `<figure>` tag.
+
+```yaml
+figcaption_class: 
+```
+
+You can provide your own class for the `<figcaption>` tag.
+
+# Using the Plugin
+
+To use the plugin you simply need to ensure your image HTML output matches the scope defined. For example the default scope is simply `img.caption` to you would need to have a title and the `.caption` class:
+
+```markdown
+![](myimage.jpg?classes=caption "This is my caption text")
+```
+
+# CSS Classes
+
+The plugin will take any classes set on the original image tag that start with either `caption-` or `figure` and add those to the surrounding `<figure>` tag. The built in CSS provide a few helper CSS classes:
+
+```css
+.figure-left        # float the figure to the left of the content
+.figure-right       # float the figure to the right of the content
+.caption-left       # align the caption to the left of the image
+.caption-right      # align the caption to the right of the image
+```
+
+By default both the Figure and the Caption are center aligned
+
+To use this you can simply put in our markdown:
+
+```markdown
+![](myimage.jpg?classes=caption,figure-right "This is my figure floated right and caption text centered")
+```
+
+or 
+
+```markdown
+![](myimage.jpg?classes=caption,figure-left,caption-right "This is my figure floated left with caption text aligned right")
+```

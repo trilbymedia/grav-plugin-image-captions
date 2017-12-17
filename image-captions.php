@@ -91,6 +91,11 @@ class ImageCaptionsPlugin extends Plugin
      */
     protected function processFigures($content)
     {
+        // Check for empty content
+        if (trim($content) === '') {
+            return;
+        }
+
         $document = new Document($content);
 
         $scope = trim($this->grav['config']->get('plugins.image-captions.scope'));

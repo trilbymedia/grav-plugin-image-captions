@@ -7,20 +7,20 @@ The **Image Captions** Plugin is for [Grav CMS](http://github.com/getgrav/grav).
 This plugin converts the HTML `<img>` tag into a `<figure>` tag with an `<figcaption>` caption.  For example, if you had the following Markdown in your content:
 
 ```markdown
-![My Image Alt Text](myimage.jpg "My Image Caption")
+![My Image Alt Text](myimage.jpg?classes=caption "My Image Caption")
 ```
 
 The resulting HTML would be:
 
 ```html
-<img src="/yourpage/mymage.jpg" alt="My Image Alt Text" title="My Image Caption" />
+<img src="/yourpage/mymage.jpg" alt="My Image Alt Text" title="My Image Caption" class="caption" />
 ```
 
 And with the plugin enabled, the result would be:
 
 ```html
 <figure class="image-caption">
-    <img src="/yourpage/mymage.jpg" alt="My Image Alt Text" title="My Image Caption" />
+    <img src="/yourpage/mymage.jpg" alt="My Image Alt Text" title="My Image Caption" class="caption" />
     <figcaption>My Image Caption</figcaption>
 </figure>
 ```

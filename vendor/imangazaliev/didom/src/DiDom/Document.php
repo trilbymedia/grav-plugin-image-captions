@@ -52,7 +52,7 @@ class Document
 
         $this->preserveWhiteSpace(false);
 
-        if ($string !== null) {
+        if ($string !== null and $string !=="") {
             $this->load($string, $isFile, $type);
         }
     }

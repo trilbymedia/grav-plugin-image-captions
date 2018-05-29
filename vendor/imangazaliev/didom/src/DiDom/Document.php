@@ -236,7 +236,7 @@ class Document
 
         Errors::disable();
 
-        $this->type === 'xml' ? $this->document->loadXml($string, $options) : $this->document->loadHtml($string, $options);
+        $this->type === 'xml' ? $this->document->loadXml($string, $options) : $this->document->loadHtml($string ? $string : ' ', $options);
 
         Errors::restore();
 

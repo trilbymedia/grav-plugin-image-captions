@@ -1,3 +1,9 @@
+# v1.0.3
+## mm/dd/2018
+
+1. [](#bugfix)
+    * Remove extra `<html>` and `<body>` tags from output [#9](https://github.com/trilbymedia/grav-plugin-image-captions/pull/9)
+
 # v1.0.2
 ## 07/13/2018
 

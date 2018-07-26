@@ -122,9 +122,22 @@ class ImageCaptionsPlugin extends Plugin
                     $image->replace($figure);
                 }
             }
-            return $document->html();
+            return $this->cleanupTags($document->html());
         }
 
         return $content;
+    }
+
+    /**
+     * Removes html and body tags at the begining and end of the html source
+     *
+     * @param $html
+     * @return string
+     */
+    private static function cleanupTags($html)
+    {
+        $html = preg_replace('@^<html><body>\\n@', '', $html);
+        $html = preg_replace('@\\n</body></html>$@', '', $html);
+        return $html;
     }
 }

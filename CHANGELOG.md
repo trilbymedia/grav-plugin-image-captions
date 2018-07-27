@@ -1,5 +1,5 @@
 # v1.0.3
-## mm/dd/2018
+## 07/27/2018
 
 1. [](#improved)
     * Remove extra `<p>` tags surrounding figure that breaks W3C validation [#8](https://github.com/trilbymedia/grav-plugin-image-captions/issues/8)

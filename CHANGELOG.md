@@ -5,6 +5,7 @@
     * Remove extra `<p>` tags surrounding figure that breaks W3C validation [#8](https://github.com/trilbymedia/grav-plugin-image-captions/issues/8)
 1. [](#bugfix)
     * Remove extra `<html>` and `<body>` tags from output [#9](https://github.com/trilbymedia/grav-plugin-image-captions/pull/9)
+    * Extra check for empty content causing out of memory or loop errors [grav#2113](https://github.com/getgrav/grav/issues/2113)
 
 # v1.0.2
 ## 07/13/2018

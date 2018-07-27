@@ -66,10 +66,9 @@ class ImageCaptionsPlugin extends Plugin
     {
         $page = $event['page'];
 
-        $content = $this->processFigures($page->content());
-
+        $content = $page->content();
+        $content = $this->processFigures($content);
         $page->setRawContent($content);
-
     }
 
     /**
@@ -92,8 +91,8 @@ class ImageCaptionsPlugin extends Plugin
     protected function processFigures($content)
     {
         // Check for empty content
-        if (trim($content) === '') {
-            return;
+        if (strlen($content) === 0) {
+            return '';
         }
 
         $document = new Document($content);

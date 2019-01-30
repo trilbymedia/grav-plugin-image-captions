@@ -133,25 +133,25 @@ class ImageCaptionsPlugin extends Plugin
      * @param $html
      * @return string
      */
-    private static function cleanupTags($html)
+    private function cleanupTags($html)
     {
         // remove html/body tags
-        $html = preg_replace('@^<html><body>\\n@', '', $html);
-        $html = preg_replace('@\\n</body></html>$@', '', $html);
+        $html = preg_replace('#<html><body>#', '', $html);
+        $html = preg_replace('#</body></html>#', '', $html);
 
         // remove p tags
-        preg_match_all('@<p>((<a*.>)?.*)(<figure.*<\/figure>)(<\/a>)?<\/p>@', $html, $matches);
+        preg_match_all('#<p>((<a*.>)?.*)(<figure((.|\n)*?)*<\/figure>)(<\/a>)?<\/p>#', $html, $matches);
 
         if (is_array($matches) && !empty($matches)) {
             $num_matches = count($matches[0]);
             for ($i = 0; $i < $num_matches; $i++) {
                 $original = $matches[0][$i];
-                $new = $matches[1][$i] . $matches[3][$i] . $matches[4][$i];
+                $new = $matches[1][$i] . $matches[3][$i] . $matches[6][$i];
 
                 $html = str_replace($original, $new, $html);
             }
         }
 
-        return $html;
+        return trim($html);
     }
 }

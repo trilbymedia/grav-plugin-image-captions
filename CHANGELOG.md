@@ -1,3 +1,9 @@
+# v1.0.4
+## mm/dd/2018
+
+1. [](#bugfix)
+  * Fixed various issues with multiple image captions [#2](https://github.com/trilbymedia/grav-plugin-image-captions/issues/2)
+
 # v1.0.3
 ## 07/27/2018
 

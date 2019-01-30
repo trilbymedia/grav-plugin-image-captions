@@ -54,6 +54,13 @@ class ImageCaptionsPlugin extends Plugin
      */
     public function onOutputGenerated()
     {
+        $page = $this->grav['page'];
+        $this->updateConfig($page);
+
+        if ($this->config->get('plugins.image-captions.enabled') === false) {
+            return;
+        }
+
         $this->grav->output = $this->processFigures($this->grav->output);
     }
 
@@ -65,6 +72,11 @@ class ImageCaptionsPlugin extends Plugin
     public function onPageContentProcessed(Event $event)
     {
         $page = $event['page'];
+        $this->updateConfig($page);
+
+        if ($this->config->get('plugins.image-captions.enabled') === false) {
+            return;
+        }
 
         $content = $page->content();
         $content = $this->processFigures($content);
@@ -125,6 +137,12 @@ class ImageCaptionsPlugin extends Plugin
         }
 
         return $content;
+    }
+
+    private function updateConfig($page)
+    {
+        $config = $this->mergeConfig($page)->toArray();
+        $this->config->set('plugins.image-captions', $config);
     }
 
     /**

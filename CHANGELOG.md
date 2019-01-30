@@ -1,6 +1,8 @@
-# v1.0.4
+# v2.0.0
 ## mm/dd/2018
 
+1. [](#new)
+  * Added the ability to override settings per-page [#5](https://github.com/trilbymedia/grav-plugin-image-captions/issues/5)
 1. [](#bugfix)
   * Fixed various issues with multiple image captions [#2](https://github.com/trilbymedia/grav-plugin-image-captions/issues/2)
 

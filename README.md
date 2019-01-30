@@ -87,6 +87,24 @@ figcaption_class:
 
 You can provide your own class for the `<figcaption>` tag.
 
+# Overriding Config Per Page
+
+You can also override any of the plugin settings on a per-page basis by simply including override values in the page frontmatter.  For example:
+
+```
+image-captions:
+  enabled: false
+```
+
+Will disable image-captions on this particular page, or:
+
+```
+image-captions:
+  figcaption_class: grav-captions 
+```
+
+Will set the `figcaption_class` for this particular page.
+
 # Using the Plugin
 
 To use the plugin you simply need to ensure your image HTML output matches the scope defined. For example the default scope is simply `img.caption` to you would need to have a title and the `.caption` class:

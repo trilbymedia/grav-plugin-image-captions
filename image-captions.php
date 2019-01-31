@@ -157,19 +157,22 @@ class ImageCaptionsPlugin extends Plugin
         $html = preg_replace('#<html><body>#', '', $html);
         $html = preg_replace('#</body></html>#', '', $html);
 
+        // remove whitespace
+        $html = trim($html);
+
         // remove p tags
-        preg_match_all('#<p>((<a*.>)?.*)(<figure((.|\n)*?)*<\/figure>)(<\/a>)?<\/p>#', $html, $matches);
+        preg_match_all('#<p>((<a*.>)?.*)(<figure((?:.|\n)*?)*<\/figure>)(<\/a>)?<\/p>#m', $html, $matches);
 
         if (is_array($matches) && !empty($matches)) {
             $num_matches = count($matches[0]);
             for ($i = 0; $i < $num_matches; $i++) {
                 $original = $matches[0][$i];
-                $new = $matches[1][$i] . $matches[3][$i] . $matches[6][$i];
+                $new = $matches[1][$i] . $matches[3][$i] . $matches[5][$i];
 
                 $html = str_replace($original, $new, $html);
             }
         }
 
-        return trim($html);
+        return $html;
     }
 }

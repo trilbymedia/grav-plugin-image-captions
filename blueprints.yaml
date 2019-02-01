@@ -1,5 +1,5 @@
 name: Image Captions
-version: 1.0.3
+version: 2.0.0
 description: "Looks for images with defined title attribute and converts them to figcaptions."
 icon: image
 author:

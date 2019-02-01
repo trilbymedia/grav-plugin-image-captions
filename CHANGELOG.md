@@ -1,5 +1,5 @@
 # v2.0.0
-## mm/dd/2018
+## 01/31/2018
 
 1. [](#new)
   * Added the ability to override settings per-page [#5](https://github.com/trilbymedia/grav-plugin-image-captions/issues/5)

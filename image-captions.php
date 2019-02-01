@@ -161,7 +161,7 @@ class ImageCaptionsPlugin extends Plugin
         $html = trim($html);
 
         // remove p tags
-        preg_match_all('#<p>(?:\s*)((<a*.>)?.*)(?:\s*)(<figure((?:.|\n)*?)*(?:\s*)<\/figure>)(?:\s*)(<\/a>)?<\/p>#m', $html, $matches);
+        preg_match_all('#<p>(?:\s*)((<a*.>)?.*)(?:\s*)(<figure((?:.|\n)*?)*(?:\s*)<\/figure>)(?:\s*)(<\/a>)?(?:\s*)<\/p>#m', $html, $matches);
 
         if (is_array($matches) && !empty($matches)) {
             $num_matches = count($matches[0]);

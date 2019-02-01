@@ -54,6 +54,13 @@ class ImageCaptionsPlugin extends Plugin
      */
     public function onOutputGenerated()
     {
+        $page = $this->grav['page'];
+        $this->updateConfig($page);
+
+        if ($this->config->get('plugins.image-captions.enabled') === false) {
+            return;
+        }
+
         $this->grav->output = $this->processFigures($this->grav->output);
     }
 
@@ -65,6 +72,11 @@ class ImageCaptionsPlugin extends Plugin
     public function onPageContentProcessed(Event $event)
     {
         $page = $event['page'];
+        $this->updateConfig($page);
+
+        if ($this->config->get('plugins.image-captions.enabled') === false) {
+            return;
+        }
 
         $content = $page->content();
         $content = $this->processFigures($content);
@@ -127,26 +139,35 @@ class ImageCaptionsPlugin extends Plugin
         return $content;
     }
 
+    private function updateConfig($page)
+    {
+        $config = $this->mergeConfig($page)->toArray();
+        $this->config->set('plugins.image-captions', $config);
+    }
+
     /**
      * Removes html and body tags at the begining and end of the html source
      *
      * @param $html
      * @return string
      */
-    private static function cleanupTags($html)
+    private function cleanupTags($html)
     {
         // remove html/body tags
-        $html = preg_replace('@^<html><body>\\n@', '', $html);
-        $html = preg_replace('@\\n</body></html>$@', '', $html);
+        $html = preg_replace('#<html><body>#', '', $html);
+        $html = preg_replace('#</body></html>#', '', $html);
+
+        // remove whitespace
+        $html = trim($html);
 
         // remove p tags
-        preg_match_all('@<p>((<a*.>)?.*)(<figure.*<\/figure>)(<\/a>)?<\/p>@', $html, $matches);
+        preg_match_all('#<p>(?:\s*)((<a*.>)?.*)(?:\s*)(<figure((?:.|\n)*?)*(?:\s*)<\/figure>)(?:\s*)(<\/a>)?(?:\s*)<\/p>#m', $html, $matches);
 
         if (is_array($matches) && !empty($matches)) {
             $num_matches = count($matches[0]);
             for ($i = 0; $i < $num_matches; $i++) {
                 $original = $matches[0][$i];
-                $new = $matches[1][$i] . $matches[3][$i] . $matches[4][$i];
+                $new = $matches[1][$i] . $matches[3][$i] . $matches[5][$i];
 
                 $html = str_replace($original, $new, $html);
             }

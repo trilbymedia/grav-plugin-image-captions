@@ -2,63 +2,74 @@
 
 namespace DiDom;
 
+use DOMCdataSection;
+use DOMComment;
 use DOMDocument;
-use DOMNode;
 use DOMElement;
+use DOMNode;
+use DOMText;
 use InvalidArgumentException;
-use phpDocumentor\Reflection\DocBlock\Tags\Param;
-use RuntimeException;
 use LogicException;
+use RuntimeException;
 
+/**
+ * @property string $tag
+ */
 class Element
 {
     /**
      * The DOM element instance.
      *
-     * @var \DOMElement|\DOMText|\DOMComment
+     * @var \DOMElement|\DOMText|\DOMComment|\DOMCdataSection
      */
     protected $node;
 
     /**
+     * @var \DiDom\ClassAttribute
+     */
+    protected $classAttribute;
+
+    /**
+     * @var \DiDom\StyleAttribute
+     */
+    protected $styleAttribute;
+
+    /**
      * Constructor.
      *
-     * @param \DOMElement|\DOMText|\DOMComment|string $name The tag name of the element
+     * @param \DOMElement|\DOMText|\DOMComment|\DOMCdataSection|string $tagName The tag name of the element
      * @param string|null $value The value of the element
      * @param array $attributes The attributes of the element
-     *
-     * @throws \InvalidArgumentException if the attributes is not an array
      */
-    public function __construct($name, $value = null, array $attributes = [])
+    public function __construct($tagName, $value = null, array $attributes = [])
     {
-        if (is_string($name)) {
+        if (is_string($tagName)) {
             $document = new DOMDocument('1.0', 'UTF-8');
 
-            $node = $document->createElement($name);
+            $node = $document->createElement($tagName);
 
             $this->setNode($node);
         } else {
-            $this->setNode($name);
+            $this->setNode($tagName);
         }
 
         if ($value !== null) {
             $this->setValue($value);
         }
 
-        foreach ($attributes as $name => $value) {
-            $this->setAttribute($name, $value);
+        foreach ($attributes as $attrName => $attrValue) {
+            $this->setAttribute($attrName, $attrValue);
         }
     }
 
     /**
-     * Create new element.
+     * Creates a new element.
      *
      * @param \DOMNode|string $name The tag name of the element
      * @param string|null $value The value of the element
      * @param array  $attributes The attributes of the element
      *
      * @return \DiDom\Element
-     *
-     * @throws \InvalidArgumentException if the attributes is not an array
      */
     public static function create($name, $value = null, array $attributes = [])
     {
@@ -66,7 +77,7 @@ class Element
     }
 
     /**
-     * Create new element node by CSS selector.
+     * Creates a new element node by CSS selector.
      *
      * @param string $selector
      * @param string|null $value
@@ -80,7 +91,46 @@ class Element
     }
 
     /**
-     * Adds new child at the end of the children.
+     * Adds a new child at the start of the children.
+     *
+     * @param \DiDom\Element|\DOMNode|array $nodes The prepended child
+     *
+     * @return \DiDom\Element|\DiDom\Element[]
+     *
+     * @throws \LogicException if current node has no owner document
+     * @throws \InvalidArgumentException if the provided argument is not an instance of \DOMNode or \DiDom\Element
+     */
+    public function prependChild($nodes)
+    {
+        if ($this->node->ownerDocument === null) {
+            throw new LogicException('Can not prepend child to element without owner document');
+        }
+
+        $returnArray = true;
+
+        if (!is_array($nodes)) {
+            $nodes = [$nodes];
+
+            $returnArray = false;
+        }
+
+        $nodes = array_reverse($nodes);
+
+        $result = [];
+
+        $referenceNode = $this->node->firstChild;
+
+        foreach ($nodes as $node) {
+            $result[] = $this->insertBefore($node, $referenceNode);
+
+            $referenceNode = $this->node->firstChild;
+        }
+
+        return $returnArray ? $result : $result[0];
+    }
+
+    /**
+     * Adds a new child at the end of the children.
      *
      * @param \DiDom\Element|\DOMNode|array $nodes The appended child
      *
@@ -105,30 +155,107 @@ class Element
 
         $result = [];
 
+        Errors::disable();
+
         foreach ($nodes as $node) {
             if ($node instanceof Element) {
                 $node = $node->getNode();
             }
 
-            if (!$node instanceof \DOMNode) {
+            if (!$node instanceof DOMNode) {
                 throw new InvalidArgumentException(sprintf('Argument 1 passed to %s must be an instance of %s\Element or DOMNode, %s given', __METHOD__, __NAMESPACE__, (is_object($node) ? get_class($node) : gettype($node))));
             }
 
-            Errors::disable();
-
-            $cloned = $node->cloneNode(true);
-            $newNode = $this->node->ownerDocument->importNode($cloned, true);
+            $clonedNode = $node->cloneNode(true);
+            $newNode = $this->node->ownerDocument->importNode($clonedNode, true);
 
             $result[] = $this->node->appendChild($newNode);
-
-            Errors::restore();
         }
 
-        $result = array_map(function (\DOMNode $node) {
+        Errors::restore();
+
+        $result = array_map(function (DOMNode $node) {
             return new Element($node);
         }, $result);
 
         return $returnArray ? $result : $result[0];
+    }
+
+    /**
+     * Adds a new child before a reference node.
+     *
+     * @param \DiDom\Element|\DOMNode $node The new node
+     * @param \DiDom\Element|\DOMNode|null $referenceNode The reference node
+     *
+     * @return \DiDom\Element
+     *
+     * @throws \LogicException if current node has no owner document
+     * @throws \InvalidArgumentException if $node is not an instance of \DOMNode or \DiDom\Element
+     * @throws \InvalidArgumentException if $referenceNode is not an instance of \DOMNode or \DiDom\Element
+     */
+    public function insertBefore($node, $referenceNode = null)
+    {
+        if ($this->node->ownerDocument === null) {
+            throw new LogicException('Can not insert child to element without owner document');
+        }
+
+        if ($node instanceof Element) {
+            $node = $node->getNode();
+        }
+
+        if (!$node instanceof DOMNode) {
+            throw new InvalidArgumentException(sprintf('Argument 1 passed to %s must be an instance of %s\Element or DOMNode, %s given', __METHOD__, __NAMESPACE__, (is_object($node) ? get_class($node) : gettype($node))));
+        }
+
+        if ($referenceNode !== null) {
+            if ($referenceNode instanceof Element) {
+                $referenceNode = $referenceNode->getNode();
+            }
+
+            if (!$referenceNode instanceof DOMNode) {
+                throw new InvalidArgumentException(sprintf('Argument 2 passed to %s must be an instance of %s\Element or DOMNode, %s given', __METHOD__, __NAMESPACE__, (is_object($referenceNode) ? get_class($referenceNode) : gettype($referenceNode))));
+            }
+        }
+
+        Errors::disable();
+
+        $clonedNode = $node->cloneNode(true);
+        $newNode = $this->node->ownerDocument->importNode($clonedNode, true);
+
+        $insertedNode = $this->node->insertBefore($newNode, $referenceNode);
+
+        Errors::restore();
+
+        return new Element($insertedNode);
+    }
+
+    /**
+     * Adds a new child after a reference node.
+     *
+     * @param \DiDom\Element|\DOMNode $node The new node
+     * @param \DiDom\Element|\DOMNode|null $referenceNode The reference node
+     *
+     * @return \DiDom\Element
+     *
+     * @throws \LogicException if current node has no owner document
+     * @throws \InvalidArgumentException if $node is not an instance of \DOMNode or \DiDom\Element
+     * @throws \InvalidArgumentException if $referenceNode is not an instance of \DOMNode or \DiDom\Element
+     */
+    public function insertAfter($node, $referenceNode = null)
+    {
+        if ($referenceNode === null) {
+            return $this->insertBefore($node);
+        }
+
+        if ($referenceNode instanceof Element) {
+            $referenceNode = $referenceNode->getNode();
+        }
+
+        if (!$referenceNode instanceof DOMNode) {
+            throw new InvalidArgumentException(sprintf('Argument 2 passed to %s must be an instance of %s\Element or DOMNode, %s given', __METHOD__, __NAMESPACE__, (is_object($referenceNode) ? get_class($referenceNode) : gettype($referenceNode))));
+        }
+
+        return $this->insertBefore($node, $referenceNode->nextSibling);
     }
 
     /**
@@ -248,7 +375,8 @@ class Element
      *
      * @return bool
      *
-     * @throws \RuntimeException if tag name is not specified in strict mode
+     * @throws \InvalidArgumentException if the tag name is not a string
+     * @throws \RuntimeException if the tag name is not specified in strict mode
      */
     public function matches($selector, $strict = false)
     {
@@ -256,7 +384,7 @@ class Element
             throw new InvalidArgumentException(sprintf('%s expects parameter 1 to be string, %s given', __METHOD__, gettype($selector)));
         }
 
-        if (!$this->node instanceof \DOMElement) {
+        if (!$this->node instanceof DOMElement) {
             return false;
         }
 
@@ -268,7 +396,7 @@ class Element
             $innerHtml = $this->html();
             $html = "<root>$innerHtml</root>";
 
-            $selector = 'root > '.trim($selector);
+            $selector = 'root > ' . trim($selector);
 
             $document = new Document();
 
@@ -283,7 +411,7 @@ class Element
             throw new RuntimeException(sprintf('Tag name must be specified in %s', $selector));
         }
 
-        if ($segments['tag'] !== $this->tag and $segments['tag'] !== '*') {
+        if ($segments['tag'] !== $this->tag && $segments['tag'] !== '*') {
             return false;
         }
 
@@ -300,21 +428,21 @@ class Element
         $diff1 = array_diff($segments['classes'], $classes);
         $diff2 = array_diff($classes, $segments['classes']);
 
-        if (count($diff1) > 0 or count($diff2) > 0) {
+        if (count($diff1) > 0 || count($diff2) > 0) {
             return false;
         }
 
         $attributes = $this->attributes();
 
-        unset($attributes['id']);
-        unset($attributes['class']);
+        unset($attributes['id'], $attributes['class']);
 
         $segments['attributes'] = array_key_exists('attributes', $segments) ? $segments['attributes'] : [];
 
         $diff1 = array_diff_assoc($segments['attributes'], $attributes);
         $diff2 = array_diff_assoc($attributes, $segments['attributes']);
 
-        if (count($diff1) > 0 or count($diff2) > 0) {
+        // if the attributes are not equal
+        if (count($diff1) > 0 || count($diff2) > 0) {
             return false;
         }
 
@@ -347,7 +475,7 @@ class Element
             $value = (string) $value;
         }
 
-        if (!is_string($value) and $value !== null) {
+        if (!is_string($value) && $value !== null) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 2 to be string or null, %s given', __METHOD__, (is_object($value) ? get_class($value) : gettype($value))));
         }
 
@@ -401,7 +529,7 @@ class Element
         }
 
         foreach ($this->attributes() as $name => $value) {
-            if (in_array($name, $exclusions)) {
+            if (in_array($name, $exclusions, true)) {
                 continue;
             }
 
@@ -454,7 +582,7 @@ class Element
         $result = [];
 
         foreach ($this->node->attributes as $name => $attribute) {
-            if (in_array($name, $names)) {
+            if (in_array($name, $names, true)) {
                 $result[$name] = $attribute->value;
             }
         }
@@ -463,13 +591,67 @@ class Element
     }
 
     /**
-     * Dumps the node into a string using HTML formatting.
+     * @return \DiDom\ClassAttribute
      *
-     * @return string The node HTML
+     * @throws \LogicException if the node is not an instance of \DOMElement
+     */
+    public function classes()
+    {
+        if ($this->classAttribute !== null) {
+            return $this->classAttribute;
+        }
+
+        if (!$this->isElementNode()) {
+            throw new LogicException('Class attribute is available only for element nodes');
+        }
+
+        $this->classAttribute = new ClassAttribute($this);
+
+        return $this->classAttribute;
+    }
+
+    /**
+     * @return \DiDom\StyleAttribute
+     *
+     * @throws \LogicException if the node is not an instance of \DOMElement
+     */
+    public function style()
+    {
+        if ($this->styleAttribute !== null) {
+            return $this->styleAttribute;
+        }
+
+        if (!$this->isElementNode()) {
+            throw new LogicException('Style attribute is available only for element nodes');
+        }
+
+        $this->styleAttribute = new StyleAttribute($this);
+
+        return $this->styleAttribute;
+    }
+
+    /**
+     * Dumps the node into a string using HTML formatting (including child nodes).
+     *
+     * @return string
      */
     public function html()
     {
         return $this->toDocument()->html();
+    }
+
+    /**
+     * Dumps the node into a string using HTML formatting (without child nodes).
+     *
+     * @return string
+     */
+    public function outerHtml()
+    {
+        $document = new DOMDocument();
+
+        $importedNode = $document->importNode($this->node);
+
+        return $document->saveHTML($importedNode);
     }
 
     /**
@@ -483,8 +665,7 @@ class Element
     {
         $innerHtml = [];
 
-        foreach ($this->node->childNodes as $childNode)
-        {
+        foreach ($this->node->childNodes as $childNode) {
             $innerHtml[] = $childNode->ownerDocument->saveHTML($childNode);
         }
 
@@ -492,11 +673,31 @@ class Element
     }
 
     /**
+     * Dumps the node descendants into a string using XML formatting.
+     *
+     * @param string $delimiter
+     *
+     * @return string
+     */
+    public function innerXml($delimiter = '')
+    {
+        $innerXml = [];
+
+        foreach ($this->node->childNodes as $childNode) {
+            $innerXml[] = $childNode->ownerDocument->saveXML($childNode);
+        }
+
+        return implode($delimiter, $innerXml);
+    }
+
+    /**
      * Sets inner HTML.
      *
      * @param string $html
      *
-     * @return Element
+     * @return \DiDom\Element
+     *
+     * @throws InvalidArgumentException if passed argument is not a string
      */
     public function setInnerHtml($html)
     {
@@ -564,7 +765,7 @@ class Element
             $value = (string) $value;
         }
 
-        if (!is_string($value) and $value !== null) {
+        if (!is_string($value) && $value !== null) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 1 to be string, %s given', __METHOD__, (is_object($value) ? get_class($value) : gettype($value))));
         }
 
@@ -574,33 +775,43 @@ class Element
     }
 
     /**
-     * Returns true if current node is DOMElement.
+     * Returns true if current node is a DOMElement instance.
      *
      * @return bool
      */
     public function isElementNode()
     {
-        return $this->node instanceof \DOMElement;
+        return $this->node instanceof DOMElement;
     }
 
     /**
-     * Returns true if current node is DOMText.
+     * Returns true if current node is a a DOMText instance.
      *
      * @return bool
      */
     public function isTextNode()
     {
-        return $this->node instanceof \DOMText;
+        return $this->node instanceof DOMText;
     }
 
     /**
-     * Returns true if current node is DOMComment.
+     * Returns true if current node is a DOMComment instance.
      *
      * @return bool
      */
     public function isCommentNode()
     {
-        return $this->node instanceof \DOMComment;
+        return $this->node instanceof DOMComment;
+    }
+
+    /**
+     * Returns true if current node is a DOMCdataSection instance.
+     *
+     * @return bool
+     */
+    public function isCdataSectionNode()
+    {
+        return $this->node instanceof DOMCdataSection;
     }
 
     /**
@@ -614,7 +825,7 @@ class Element
      */
     public function is($node)
     {
-        if ($node instanceof self) {
+        if ($node instanceof Element) {
             $node = $node->getNode();
         }
 
@@ -634,7 +845,7 @@ class Element
             return null;
         }
 
-        if ($this->node->parentNode instanceof \DOMDocument) {
+        if ($this->node->parentNode instanceof DOMDocument) {
             return new Document($this->node->parentNode);
         }
 
@@ -656,7 +867,7 @@ class Element
         while (true) {
             $parent = $node->parent();
 
-            if ($parent === null or $parent instanceof Document) {
+            if ($parent === null || $parent instanceof Document) {
                 return null;
             }
 
@@ -684,11 +895,11 @@ class Element
             return null;
         }
 
-        if ($selector === null and $nodeType === null) {
+        if ($selector === null && $nodeType === null) {
             return new Element($this->node->previousSibling);
         }
 
-        if ($selector !== null and $nodeType === null) {
+        if ($selector !== null && $nodeType === null) {
             $nodeType = 'DOMElement';
         }
 
@@ -696,13 +907,13 @@ class Element
             throw new InvalidArgumentException(sprintf('%s expects parameter 2 to be string, %s given', __METHOD__, gettype($nodeType)));
         }
 
-        $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment'];
+        $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment', 'DOMCdataSection'];
 
-        if (!in_array($nodeType, $allowedTypes)) {
+        if (!in_array($nodeType, $allowedTypes, true)) {
             throw new RuntimeException(sprintf('Unknown node type "%s". Allowed types: %s', $nodeType, implode(', ', $allowedTypes)));
         }
 
-        if ($selector !== null and $nodeType !== 'DOMElement') {
+        if ($selector !== null && $nodeType !== 'DOMElement') {
             throw new LogicException(sprintf('Selector can be used only with DOMElement node type, %s given', $nodeType));
         }
 
@@ -747,7 +958,7 @@ class Element
             return [];
         }
 
-        if ($selector !== null and $nodeType === null) {
+        if ($selector !== null && $nodeType === null) {
             $nodeType = 'DOMElement';
         }
 
@@ -756,14 +967,14 @@ class Element
                 throw new InvalidArgumentException(sprintf('%s expects parameter 2 to be string, %s given', __METHOD__, gettype($nodeType)));
             }
 
-            $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment'];
+            $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment', 'DOMCdataSection'];
 
-            if (!in_array($nodeType, $allowedTypes)) {
+            if (!in_array($nodeType, $allowedTypes, true)) {
                 throw new RuntimeException(sprintf('Unknown node type "%s". Allowed types: %s', $nodeType, implode(', ', $allowedTypes)));
             }
         }
 
-        if ($selector !== null and $nodeType !== 'DOMElement') {
+        if ($selector !== null && $nodeType !== 'DOMElement') {
             throw new LogicException(sprintf('Selector can be used only with DOMElement node type, %s given', $nodeType));
         }
 
@@ -822,11 +1033,11 @@ class Element
             return null;
         }
 
-        if ($selector === null and $nodeType === null) {
+        if ($selector === null && $nodeType === null) {
             return new Element($this->node->nextSibling);
         }
 
-        if ($selector !== null and $nodeType === null) {
+        if ($selector !== null && $nodeType === null) {
             $nodeType = 'DOMElement';
         }
 
@@ -834,13 +1045,13 @@ class Element
             throw new InvalidArgumentException(sprintf('%s expects parameter 2 to be string, %s given', __METHOD__, gettype($nodeType)));
         }
 
-        $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment'];
+        $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment', 'DOMCdataSection'];
 
-        if (!in_array($nodeType, $allowedTypes)) {
+        if (!in_array($nodeType, $allowedTypes, true)) {
             throw new RuntimeException(sprintf('Unknown node type "%s". Allowed types: %s', $nodeType, implode(', ', $allowedTypes)));
         }
 
-        if ($selector !== null and $nodeType !== 'DOMElement') {
+        if ($selector !== null && $nodeType !== 'DOMElement') {
             throw new LogicException(sprintf('Selector can be used only with DOMElement node type, %s given', $nodeType));
         }
 
@@ -885,7 +1096,7 @@ class Element
             return [];
         }
 
-        if ($selector !== null and $nodeType === null) {
+        if ($selector !== null && $nodeType === null) {
             $nodeType = 'DOMElement';
         }
 
@@ -894,14 +1105,14 @@ class Element
                 throw new InvalidArgumentException(sprintf('%s expects parameter 2 to be string, %s given', __METHOD__, gettype($nodeType)));
             }
 
-            $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment'];
+            $allowedTypes = ['DOMElement', 'DOMText', 'DOMComment', 'DOMCdataSection'];
 
-            if (!in_array($nodeType, $allowedTypes)) {
+            if (!in_array($nodeType, $allowedTypes, true)) {
                 throw new RuntimeException(sprintf('Unknown node type "%s". Allowed types: %s', $nodeType, implode(', ', $allowedTypes)));
             }
         }
 
-        if ($selector !== null and $nodeType !== 'DOMElement') {
+        if ($selector !== null && $nodeType !== 'DOMElement') {
             throw new LogicException(sprintf('Selector can be used only with DOMElement node type, %s given', $nodeType));
         }
 
@@ -945,6 +1156,8 @@ class Element
     }
 
     /**
+     * @param int $index
+     *
      * @return \DiDom\Element|null
      */
     public function child($index)
@@ -979,7 +1192,7 @@ class Element
     }
 
     /**
-     * @return \DiDom\Element[]
+     * @return bool
      */
     public function hasChildren()
     {
@@ -993,8 +1206,7 @@ class Element
     {
         $children = [];
 
-        foreach ($this->node->childNodes as $node)
-        {
+        foreach ($this->node->childNodes as $node) {
             $children[] = new Element($node);
         }
 
@@ -1010,7 +1222,7 @@ class Element
      */
     public function removeChild($childNode)
     {
-        if ($childNode instanceof self) {
+        if ($childNode instanceof Element) {
             $childNode = $childNode->getNode();
         }
 
@@ -1026,7 +1238,7 @@ class Element
     /**
      * Removes all child nodes.
      *
-     * @return \DiDom\Element the nodes that has been removed
+     * @return \DiDom\Element[] the nodes that has been removed
      */
     public function removeChildren()
     {
@@ -1034,15 +1246,13 @@ class Element
         // because removing nodes from the DOMNodeList on iterating is not working
         $childNodes = [];
 
-        foreach ($this->node->childNodes as $childNode)
-        {
+        foreach ($this->node->childNodes as $childNode) {
             $childNodes[] = $childNode;
         }
 
         $removedNodes = [];
 
-        foreach ($childNodes as $childNode)
-        {
+        foreach ($childNodes as $childNode) {
             $removedNode = $this->node->removeChild($childNode);
 
             $removedNodes[] = new Element($removedNode);
@@ -1085,7 +1295,7 @@ class Element
             throw new LogicException('Can not replace element without parent node');
         }
 
-        if ($newNode instanceof self) {
+        if ($newNode instanceof Element) {
             $newNode = $newNode->getNode();
         }
 
@@ -1097,7 +1307,7 @@ class Element
             $newNode = $newNode->cloneNode(true);
         }
 
-        if ($newNode->ownerDocument === null or !$this->getDocument()->is($newNode->ownerDocument)) {
+        if ($newNode->ownerDocument === null || !$this->getDocument()->is($newNode->ownerDocument)) {
             $newNode = $this->node->ownerDocument->importNode($newNode, true);
         }
 
@@ -1131,16 +1341,16 @@ class Element
     /**
      * Sets current node instance.
      *
-     * @param \DOMElement|\DOMText|\DOMComment $node
+     * @param \DOMElement|\DOMText|\DOMComment|\DOMCdataSection $node
      *
      * @return \DiDom\Element
      */
     protected function setNode($node)
     {
-        $allowedClasses = ['DOMElement', 'DOMText', 'DOMComment'];
+        $allowedClasses = ['DOMElement', 'DOMText', 'DOMComment', 'DOMCdataSection'];
 
-        if (!in_array(get_class($node), $allowedClasses)) {
-            throw new InvalidArgumentException(sprintf('Argument 1 passed to %s must be an instance of DOMElement, DOMText or DOMComment, %s given', __METHOD__, (is_object($node) ? get_class($node) : gettype($node))));
+        if (!is_object($node) || !in_array(get_class($node), $allowedClasses, true)) {
+            throw new InvalidArgumentException(sprintf('Argument 1 passed to %s must be an instance of DOMElement, DOMText, DOMComment or DOMCdataSection, %s given', __METHOD__, (is_object($node) ? get_class($node) : gettype($node))));
         }
 
         $this->node = $node;
@@ -1151,7 +1361,7 @@ class Element
     /**
      * Returns current node instance.
      *
-     * @return \DOMElement|\DOMText|\DOMComment
+     * @return \DOMElement|\DOMText|\DOMComment|\DOMCdataSection
      */
     public function getNode()
     {
@@ -1210,13 +1420,11 @@ class Element
      */
     public function __get($name)
     {
-        switch ($name) {
-            case 'tag':
-                return $this->node->tagName;
-                break;
-            default:
-                return $this->getAttribute($name);
+        if ($name === 'tag') {
+            return $this->node->tagName;
         }
+
+        return $this->getAttribute($name);
     }
 
     /**
@@ -1259,6 +1467,8 @@ class Element
      * @param bool   $wrapNode   Returns array of \DiDom\Element if true, otherwise array of \DOMElement
      *
      * @return \DiDom\Element[]|\DOMElement[]
+     *
+     * @deprecated Not longer recommended, use Element::find() instead.
      */
     public function __invoke($expression, $type = Query::TYPE_CSS, $wrapNode = true)
     {

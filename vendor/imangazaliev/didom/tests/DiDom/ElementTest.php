@@ -2,19 +2,35 @@
 
 namespace Tests\DiDom;
 
-use Tests\TestCase;
 use DiDom\Document;
 use DiDom\Element;
 use DiDom\Query;
+use Tests\TestCase;
 
 class ElementTest extends TestCase
 {
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testConstructorWithInvalidName()
+    public function testConstructorWithNullTagName()
     {
         new Element(null);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testConstructorWithInvalidTagNameType()
+    {
+        new Element([]);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testConstructorWithInvalidObject()
+    {
+        new Element(new \StdClass());
     }
 
     /**
@@ -84,6 +100,82 @@ class ElementTest extends TestCase
     /**
      * @expectedException \InvalidArgumentException
      */
+    public function testPrependChildWithInvalidArgument()
+    {
+        $element = new Element('span', 'hello');
+
+        $element->prependChild('foo');
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Can not prepend child to element without owner document
+     */
+    public function testPrependChildWithoutParentNode()
+    {
+        $element = new Element(new \DOMElement('div'));
+
+        $element->prependChild(new Element('div'));
+    }
+
+    public function testPrependChild()
+    {
+        $list = new Element('ul');
+
+        $this->assertEquals(0, $list->getNode()->childNodes->length);
+
+        $item = new Element('li', 'bar');
+
+        $prependedChild = $list->prependChild($item);
+
+        $this->assertEquals(1, $list->getNode()->childNodes->length);
+        $this->assertInstanceOf('DiDom\Element', $prependedChild);
+        $this->assertEquals('bar', $prependedChild->getNode()->textContent);
+
+        $item = new Element('li', 'foo');
+
+        $prependedChild = $list->prependChild($item);
+
+        $this->assertEquals(2, $list->getNode()->childNodes->length);
+        $this->assertInstanceOf('DiDom\Element', $prependedChild);
+        $this->assertEquals('foo', $prependedChild->getNode()->textContent);
+
+        $this->assertEquals('foo', $list->getNode()->childNodes->item(0)->textContent);
+        $this->assertEquals('bar', $list->getNode()->childNodes->item(1)->textContent);
+    }
+
+    public function testPrependChildWithArrayOfNodes()
+    {
+        $list = new Element('ul');
+
+        $prependedChild = $list->prependChild(new Element('li', 'foo'));
+
+        $this->assertEquals(1, $list->getNode()->childNodes->length);
+        $this->assertInstanceOf('DiDom\Element', $prependedChild);
+        $this->assertEquals('foo', $prependedChild->getNode()->textContent);
+
+        $items = [];
+
+        $items[] = new Element('li', 'bar');
+        $items[] = new Element('li', 'baz');
+
+        $appendedChildren = $list->prependChild($items);
+
+        $this->assertCount(2, $appendedChildren);
+        $this->assertEquals(3, $list->getNode()->childNodes->length);
+
+        foreach ($appendedChildren as $appendedChild) {
+            $this->assertInstanceOf('DiDom\Element', $appendedChild);
+        }
+
+        foreach (['bar', 'baz', 'foo'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testAppendChildWithInvalidArgument()
     {
         $element = new Element('span', 'hello');
@@ -93,6 +185,7 @@ class ElementTest extends TestCase
 
     /**
      * @expectedException \LogicException
+     * @expectedExceptionMessage Can not append child to element without owner document
      */
     public function testAppendChildWithoutParentNode()
     {
@@ -105,31 +198,204 @@ class ElementTest extends TestCase
     {
         $list = new Element('ul');
 
-        $this->assertCount(0, $list->find('li'));
+        $this->assertEquals(0, $list->getNode()->childNodes->length);
 
         $item = new Element('li', 'foo');
         $appendedChild = $list->appendChild($item);
 
-        $this->assertCount(1, $list->find('li'));
+        $this->assertEquals(1, $list->getNode()->childNodes->length);
         $this->assertInstanceOf('DiDom\Element', $appendedChild);
-        $this->assertEquals('foo', $appendedChild->text());
+        $this->assertEquals('foo', $appendedChild->getNode()->textContent);
 
-        $appendedChild->remove();
+        $item = new Element('li', 'bar');
+        $appendedChild = $list->appendChild($item);
 
-        $this->assertCount(0, $list->find('li'));
+        $this->assertEquals(2, $list->getNode()->childNodes->length);
+        $this->assertInstanceOf('DiDom\Element', $appendedChild);
+        $this->assertEquals('bar', $appendedChild->getNode()->textContent);
+
+        $this->assertEquals('foo', $list->getNode()->childNodes->item(0)->textContent);
+        $this->assertEquals('bar', $list->getNode()->childNodes->item(1)->textContent);
+    }
+
+    public function testAppendChildWithArray()
+    {
+        $list = new Element('ul');
+
+        $appendedChild = $list->appendChild(new Element('li', 'foo'));
+
+        $this->assertEquals(1, $list->getNode()->childNodes->length);
+        $this->assertInstanceOf('DiDom\Element', $appendedChild);
+        $this->assertEquals('foo', $appendedChild->getNode()->textContent);
 
         $items = [];
+
         $items[] = new Element('li', 'bar');
         $items[] = new Element('li', 'baz');
 
         $appendedChildren = $list->appendChild($items);
 
         $this->assertCount(2, $appendedChildren);
-        $this->assertCount(2, $list->find('li'));
+        $this->assertEquals(3, $list->getNode()->childNodes->length);
 
-        foreach (['bar', 'baz'] as $index => $value) {
-            $this->assertInstanceOf('DiDom\Element', $appendedChildren[$index]);
-            $this->assertEquals($value, $appendedChildren[$index]->text());
+        foreach ($appendedChildren as $appendedChild) {
+            $this->assertInstanceOf('DiDom\Element', $appendedChild);
+        }
+
+        foreach (['foo', 'bar', 'baz'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testInsertBeforeWithInvalidNodeArgument()
+    {
+        $list = new Element('ul');
+
+        $list->insertBefore('foo');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Argument 2 passed to DiDom\Element::insertBefore must be an instance of DiDom\Element or DOMNode, string given
+     */
+    public function testInsertBeforeWithInvalidReferenceNodeArgument()
+    {
+        $list = new Element('ul');
+
+        $list->insertBefore(new Element('li', 'foo'), 'foo');
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Can not insert child to element without owner document
+     */
+    public function testInsertBeforeWithoutParentNode()
+    {
+        $list = new Element(new \DOMElement('ul'));
+
+        $list->insertBefore(new Element('li', 'foo'));
+    }
+
+    public function testInsertBefore()
+    {
+        $list = new Element('ul');
+
+        $insertedNode = $list->insertBefore(new Element('li', 'qux'));
+
+        $this->assertInstanceOf('DiDom\Element', $insertedNode);
+        $this->assertEquals('qux', $insertedNode->getNode()->textContent);
+
+        foreach (['qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+
+        $list->insertBefore(new Element('li', 'foo'), $list->getNode()->childNodes->item(0));
+
+        foreach (['foo', 'qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+
+        $list->insertBefore(new Element('li', 'baz'), $list->getNode()->childNodes->item(1));
+
+        foreach (['foo', 'baz', 'qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+
+        $list->insertBefore(new Element('li', 'bar'), $list->getNode()->childNodes->item(1));
+
+        foreach (['foo', 'bar', 'baz', 'qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+    }
+
+    public function testInsertBeforeWithoutReferenceNode()
+    {
+        $list = new Element('ul');
+
+        $list->insertBefore(new Element('li', 'foo'));
+        $list->insertBefore(new Element('li', 'bar'));
+
+        foreach (['foo', 'bar'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testInsertAfterWithInvalidNodeArgument()
+    {
+        $list = new Element('ul');
+
+        $list->insertAfter('foo');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Argument 2 passed to DiDom\Element::insertAfter must be an instance of DiDom\Element or DOMNode, string given
+     */
+    public function testInsertAfterWithInvalidReferenceNodeArgument()
+    {
+        $list = new Element('ul');
+
+        $list->insertAfter(new Element('li', 'foo'), 'foo');
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Can not insert child to element without owner document
+     */
+    public function testInsertAfterWithoutParentNode()
+    {
+        $list = new Element(new \DOMElement('ul'));
+
+        $list->insertAfter(new Element('li', 'foo'));
+    }
+
+    public function testInsertAfter()
+    {
+        $list = new Element('ul');
+
+        $insertedNode = $list->insertAfter(new Element('li', 'foo'));
+
+        $this->assertInstanceOf('DiDom\Element', $insertedNode);
+        $this->assertEquals('foo', $insertedNode->getNode()->textContent);
+
+        foreach (['foo'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+
+        $list->insertAfter(new Element('li', 'qux'), $list->getNode()->childNodes->item(0));
+
+        foreach (['foo', 'qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+
+        $list->insertAfter(new Element('li', 'bar'), $list->getNode()->childNodes->item(0));
+
+        foreach (['foo', 'bar', 'qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+
+        $list->insertAfter(new Element('li', 'baz'), $list->getNode()->childNodes->item(1));
+
+        foreach (['foo', 'bar', 'baz', 'qux'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
+        }
+    }
+
+    public function testInsertAfterWithoutReferenceNode()
+    {
+        $list = new Element('ul');
+
+        $list->insertAfter(new Element('li', 'foo'));
+        $list->insertAfter(new Element('li', 'bar'));
+
+        foreach (['foo', 'bar'] as $index => $value) {
+            $this->assertEquals($value, $list->getNode()->childNodes->item($index)->textContent);
         }
     }
 
@@ -522,11 +788,59 @@ class ElementTest extends TestCase
         $this->assertNull($element->attributes());
     }
 
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Style attribute is available only for element nodes
+     */
+    public function testStyleWithTextNode()
+    {
+        $element = new Element(new \DOMText('foo'));
+
+        $element->style();
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Style attribute is available only for element nodes
+     */
+    public function testStyleWithCommentNode()
+    {
+        $element = new Element(new \DOMComment('foo'));
+
+        $element->style();
+    }
+
+    public function testStyle()
+    {
+        $element = new Element('div');
+
+        $styleAttribute = $element->style();
+
+        $this->assertInstanceOf('DiDom\\StyleAttribute', $styleAttribute);
+        $this->assertSame($element, $styleAttribute->getElement());
+
+        $this->assertSame($styleAttribute, $element->style());
+
+        $element2 = new Element('div');
+
+        $this->assertNotSame($element->style(), $element2->style());
+    }
+
     public function testHtml()
     {
         $element = new Element('span', 'hello');
 
         $this->assertEquals('<span>hello</span>', $element->html());
+    }
+
+    public function testOuterHtml()
+    {
+        $innerHtml = 'Plain text <span>Lorem ipsum.</span><span>Lorem ipsum.</span>';
+        $html = "<div id=\"foo\" class=\"bar baz\">$innerHtml</div>";
+
+        $document = new Document($html);
+
+        $this->assertEquals('<div id="foo" class="bar baz"></div>', $document->first('#foo')->outerHtml());
     }
 
     public function testInnerHtml()
@@ -570,6 +884,28 @@ Tiếng Việt <br>
         $document = new Document($html);
 
         $this->assertEquals($expectedContent, $document->first('body')->innerHtml());
+    }
+
+    public function testInnerHtmlOnXmlElement()
+    {
+        $innerXml = 'Plain text <span>Lorem <single-tag/> ipsum.</span><span>Lorem ipsum.</span>';
+        $xml = "<div id=\"root\">$innerXml</div>";
+
+        $document = new Document($xml, false, 'UTF-8', Document::TYPE_XML);
+
+        $expectedXml = 'Plain text <span>Lorem <single-tag></single-tag> ipsum.</span><span>Lorem ipsum.</span>';
+
+        $this->assertEquals($expectedXml, $document->first('#root')->innerHtml());
+    }
+
+    public function testInnerXml()
+    {
+        $innerXml = 'Plain text <span>Lorem <single-tag/> ipsum.</span><span>Lorem ipsum.</span>';
+        $xml = "<div id=\"root\">$innerXml</div>";
+
+        $document = new Document($xml, false, 'UTF-8', Document::TYPE_XML);
+
+        $this->assertEquals($innerXml, $document->first('#root')->innerXml());
     }
 
     public function testSetInnerHtml()

@@ -2,9 +2,9 @@
 
 namespace Tests\DiDom;
 
-use Tests\TestCase;
 use DiDom\Document;
 use DiDom\Query;
+use Tests\TestCase;
 
 class DocumentTest extends TestCase
 {
@@ -118,6 +118,39 @@ class DocumentTest extends TestCase
         $this->assertEquals('input', $element->tag);
         $this->assertEquals('', $element->text());
         $this->assertEquals(['name' => 'name', 'placeholder' => 'Enter your name'], $element->attributes());
+    }
+
+    public function testCreateTextNode()
+    {
+        $document = new Document();
+
+        $textNode = $document->createTextNode('foo bar baz');
+
+        $this->assertInstanceOf('DiDom\Element', $textNode);
+        $this->assertInstanceOf('DOMText', $textNode->getNode());
+        $this->assertEquals('foo bar baz', $textNode->text());
+    }
+
+    public function testCreateComment()
+    {
+        $document = new Document();
+
+        $comment = $document->createComment('foo bar baz');
+
+        $this->assertInstanceOf('DiDom\Element', $comment);
+        $this->assertInstanceOf('DOMComment', $comment->getNode());
+        $this->assertEquals('foo bar baz', $comment->text());
+    }
+
+    public function testCreateCDATASection()
+    {
+        $document = new Document();
+
+        $cdataSection = $document->createCdataSection('foo bar baz');
+
+        $this->assertInstanceOf('DiDom\Element', $cdataSection);
+        $this->assertInstanceOf('DOMCdataSection', $cdataSection->getNode());
+        $this->assertEquals('foo bar baz', $cdataSection->text());
     }
 
     /**
@@ -400,6 +433,26 @@ class DocumentTest extends TestCase
         $this->assertEquals(['Link 1', 'Link 2', 'Link 3'], $texts);
     }
 
+    public function testFindComment()
+    {
+        $html = $this->loadFixture('menu.html');
+
+        $document = new Document($html);
+
+        $comment = $document->xpath('/html/body/ul/li/a/comment()');
+        $this->assertTrue($comment[0]->isCommentNode());
+        $this->assertTrue($comment[1]->isCommentNode());
+
+        $this->assertTrue(is_array($comment));
+        $this->assertEquals(2, count($comment));
+
+        $comment = $document->xpath('/html/body/comment()');
+        $this->assertTrue($comment[0]->isCommentNode());
+
+        $this->assertTrue(is_array($comment));
+        $this->assertEquals(1, count($comment));
+    }
+
     public function testFindAttribute()
     {
         $html = $this->loadFixture('menu.html');
@@ -492,6 +545,16 @@ class DocumentTest extends TestCase
 
         $this->assertInternalType('int', $document->count('li'));
         $this->assertEquals(0, $document->count('li'));
+    }
+
+    public function testCreateXpath()
+    {
+        $document = new Document();
+
+        $xpath =$document->createXpath();
+
+        $this->assertInstanceOf('DOMXPath', $xpath);
+        $this->assertEquals($document->getDocument(), $xpath->document);
     }
 
     public function testHtml()

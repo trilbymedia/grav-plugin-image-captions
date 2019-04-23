@@ -1,5 +1,11 @@
+# v2.0.1
+## 04/23/2019
+
+1. [](#improved)
+  * Updated `didom` library to 1.14.1
+
 # v2.0.0
-## 01/31/2018
+## 01/31/2019
 
 1. [](#new)
   * Added the ability to override settings per-page [#5](https://github.com/trilbymedia/grav-plugin-image-captions/issues/5)

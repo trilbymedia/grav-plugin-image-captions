@@ -20,7 +20,7 @@ class Encoder
             $string = iconv($encoding, 'UTF-8//IGNORE', $string);
         }
 
-        return preg_replace_callback('/[\x80-\xFF]+/', array(__CLASS__, 'htmlEncodingCallback'), $string);
+        return preg_replace_callback('/[\x80-\xFF]+/', [__CLASS__, 'htmlEncodingCallback'], $string);
     }
 
     /**
@@ -50,7 +50,7 @@ class Encoder
                 $code = (($codes[$characterIndex++] - 0xC0) << 6) + $codes[$characterIndex++] - 0x80;
             }
 
-            $entities .= '&#'.$code.';';
+            $entities .= '&#' . $code . ';';
         }
 
         return $entities;

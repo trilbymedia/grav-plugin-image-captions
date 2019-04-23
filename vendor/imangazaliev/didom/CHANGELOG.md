@@ -1,3 +1,11 @@
+### 1.13
+
+- Add `Element::outerHtml()` method
+- Add `Element::prependChild()` method
+- Add `Element::insertBefore()` and `Element::insertAfter()` methods
+- Add `Element::style()` method for more convenient inline styles manipulation
+- Add `Element::classes()` method for more convenient class manipulation
+
 ### 1.12
 
 - Many fixes and improvements

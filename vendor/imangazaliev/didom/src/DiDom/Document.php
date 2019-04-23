@@ -2,13 +2,26 @@
 
 namespace DiDom;
 
+use DOMCdataSection;
+use DOMComment;
 use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMText;
 use DOMXPath;
 use InvalidArgumentException;
 use RuntimeException;
 
 class Document
 {
+    /**
+     * Types of a document.
+     *
+     * @const string
+     */
+    const TYPE_HTML = 'html';
+    const TYPE_XML  = 'xml';
+
     /**
      * @var \DOMDocument
      */
@@ -27,14 +40,14 @@ class Document
     /**
      * Constructor.
      *
-     * @param string|null $string   HTML or XML string or file path
-     * @param bool        $isFile   Indicates that in first parameter was passed to the file path
+     * @param string|null $string   An HTML or XML string or a file path
+     * @param bool        $isFile   Indicates that the first parameter is a path to a file
      * @param string      $encoding The document encoding
      * @param string      $type     The document type
      *
      * @throws \InvalidArgumentException if the passed encoding is not a string
      */
-    public function __construct($string = null, $isFile = false, $encoding = 'UTF-8', $type = 'html')
+    public function __construct($string = null, $isFile = false, $encoding = 'UTF-8', $type = Document::TYPE_HTML)
     {
         if ($string instanceof DOMDocument) {
             $this->document = $string;
@@ -58,22 +71,22 @@ class Document
     }
 
     /**
-     * Create new document.
+     * Creates a new document.
      *
-     * @param string|null $string   HTML or XML string or file path
-     * @param bool        $isFile   Indicates that in first parameter was passed to the file path
+     * @param string|null $string   An HTML or XML string or a file path
+     * @param bool        $isFile   Indicates that the first parameter is a path to a file
      * @param string      $encoding The document encoding
      * @param string      $type     The document type
      *
      * @return \DiDom\Document
      */
-    public static function create($string = null, $isFile = false, $encoding = 'UTF-8', $type = 'html')
+    public static function create($string = null, $isFile = false, $encoding = 'UTF-8', $type = Document::TYPE_HTML)
     {
         return new Document($string, $isFile, $encoding, $type);
     }
 
     /**
-     * Create new element node.
+     * Creates a new element node.
      *
      * @param string      $name       The tag name of the element
      * @param string|null $value      The value of the element
@@ -85,17 +98,15 @@ class Document
     {
         $node = $this->document->createElement($name);
 
-        $element = new Element($node, $value, $attributes);
-
-        return $element;
+        return new Element($node, $value, $attributes);
     }
 
     /**
-     * Create new element node by CSS selector.
+     * Creates a new element node by CSS selector.
      *
-     * @param string $selector
+     * @param string      $selector
      * @param string|null $value
-     * @param array $attributes
+     * @param array       $attributes
      *
      * @return \DiDom\Element
      */
@@ -121,7 +132,37 @@ class Document
     }
 
     /**
-     * Add new child at the end of the children.
+     * @param string $content
+     *
+     * @return Element
+     */
+    public function createTextNode($content)
+    {
+        return new Element(new DOMText($content));
+    }
+
+    /**
+     * @param string $data
+     *
+     * @return Element
+     */
+    public function createComment($data)
+    {
+        return new Element(new DOMComment($data));
+    }
+
+    /**
+     * @param string $data
+     *
+     * @return Element
+     */
+    public function createCdataSection($data)
+    {
+        return new Element(new DOMCdataSection($data));
+    }
+
+    /**
+     * Adds a new child at the end of the children.
      *
      * @param \DiDom\Element|\DOMNode|array $nodes The appended child
      *
@@ -146,7 +187,7 @@ class Document
                 $node = $node->getNode();
             }
 
-            if (!$node instanceof \DOMNode) {
+            if (!$node instanceof DOMNode) {
                 throw new InvalidArgumentException(sprintf('Argument 1 passed to %s must be an instance of %s\Element or DOMNode, %s given', __METHOD__, __NAMESPACE__, (is_object($node) ? get_class($node) : gettype($node))));
             }
 
@@ -160,7 +201,7 @@ class Document
             Errors::restore();
         }
 
-        $result = array_map(function (\DOMNode $node) {
+        $result = array_map(function (DOMNode $node) {
             return new Element($node);
         }, $result);
 
@@ -199,7 +240,7 @@ class Document
      * @throws \InvalidArgumentException if document type parameter is not a string
      * @throws \RuntimeException if document type is not HTML or XML
      */
-    public function load($string, $isFile = false, $type = 'html', $options = null)
+    public function load($string, $isFile = false, $type = Document::TYPE_HTML, $options = null)
     {
         if (!is_string($string)) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 1 to be string, %s given', __METHOD__, (is_object($string) ? get_class($string) : gettype($string))));
@@ -209,7 +250,7 @@ class Document
             throw new InvalidArgumentException(sprintf('%s expects parameter 3 to be string, %s given', __METHOD__, (is_object($type) ? get_class($type) : gettype($type))));
         }
 
-        if (!in_array(strtolower($type), ['xml', 'html'])) {
+        if (!in_array(strtolower($type), [Document::TYPE_HTML, Document::TYPE_XML], true)) {
             throw new RuntimeException(sprintf('Document type must be "xml" or "html", %s given', $type));
         }
 
@@ -218,7 +259,7 @@ class Document
             $options = LIBXML_HTML_NODEFDTD;
         }
 
-        if (!is_integer($options)) {
+        if (!is_int($options)) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 4 to be integer, %s given', __METHOD__, (is_object($options) ? get_class($options) : gettype($options))));
         }
 
@@ -228,7 +269,7 @@ class Document
             $string = $this->loadFile($string);
         }
 
-        if (strtolower($type) === 'html') {
+        if (strtolower($type) === Document::TYPE_HTML) {
             $string = Encoder::convertToHtmlEntities($string, $this->encoding);
         }
 
@@ -236,7 +277,11 @@ class Document
 
         Errors::disable();
 
-        $this->type === 'xml' ? $this->document->loadXml($string, $options) : $this->document->loadHtml($string ? $string : ' ', $options);
+        if ($this->type === Document::TYPE_HTML) {
+            $this->document->loadHtml($string, $options);
+        } else {
+            $this->document->loadXml($string, $options);
+        }
 
         Errors::restore();
 
@@ -255,7 +300,7 @@ class Document
      */
     public function loadHtml($html, $options = null)
     {
-        return $this->load($html, false, 'html', $options);
+        return $this->load($html, false, Document::TYPE_HTML, $options);
     }
 
     /**
@@ -272,7 +317,7 @@ class Document
      */
     public function loadHtmlFile($filename, $options = null)
     {
-        return $this->load($filename, true, 'html', $options);
+        return $this->load($filename, true, Document::TYPE_HTML, $options);
     }
 
     /**
@@ -287,7 +332,7 @@ class Document
      */
     public function loadXml($xml, $options = null)
     {
-        return $this->load($xml, false, 'xml', $options);
+        return $this->load($xml, false, Document::TYPE_XML, $options);
     }
 
     /**
@@ -304,7 +349,7 @@ class Document
      */
     public function loadXmlFile($filename, $options = null)
     {
-        return $this->load($filename, true, 'xml', $options);
+        return $this->load($filename, true, Document::TYPE_XML, $options);
     }
 
     /**
@@ -346,15 +391,10 @@ class Document
      */
     public function has($expression, $type = Query::TYPE_CSS)
     {
-        $xpath = new DOMXPath($this->document);
-
-        $xpath->registerNamespace("php", "http://php.net/xpath");
-        $xpath->registerPhpFunctions();
-
         $expression = Query::compile($expression, $type);
         $expression = sprintf('count(%s) > 0', $expression);
 
-        return $xpath->evaluate($expression);
+        return $this->createXpath()->evaluate($expression);
     }
 
     /**
@@ -373,26 +413,21 @@ class Document
     {
         $expression = Query::compile($expression, $type);
 
-        $xpath = new DOMXPath($this->document);
-
-        $xpath->registerNamespace("php", "http://php.net/xpath");
-        $xpath->registerPhpFunctions();
-
         if ($contextNode !== null) {
             if ($contextNode instanceof Element) {
                 $contextNode = $contextNode->getNode();
             }
 
-            if (!$contextNode instanceof \DOMElement) {
+            if (!$contextNode instanceof DOMElement) {
                 throw new InvalidArgumentException(sprintf('Argument 4 passed to %s must be an instance of %s\Element or DOMElement, %s given', __METHOD__, __NAMESPACE__, (is_object($contextNode) ? get_class($contextNode) : gettype($contextNode))));
             }
 
             if ($type === Query::TYPE_CSS) {
-                $expression = '.'.$expression;
+                $expression = '.' . $expression;
             }
         }
 
-        $nodeList = $xpath->query($expression, $contextNode);
+        $nodeList = $this->createXpath()->query($expression, $contextNode);
 
         $result = [];
 
@@ -423,8 +458,8 @@ class Document
     {
         $expression = Query::compile($expression, $type);
 
-        if ($contextNode !== null and $type === Query::TYPE_CSS) {
-            $expression = '.'.$expression;
+        if ($contextNode !== null && $type === Query::TYPE_CSS) {
+            $expression = '.' . $expression;
         }
 
         $expression = sprintf('(%s)[1]', $expression);
@@ -443,7 +478,7 @@ class Document
      *
      * @return \DiDom\Element|string
      *
-     * @throws InvalidArgumentException if node is not DOMElement, DOMText or DOMAttr
+     * @throws InvalidArgumentException if node is not DOMElement, DOMText, DOMComment, DOMCdataSection or DOMAttr
      */
     protected function wrapNode($node)
     {
@@ -454,6 +489,12 @@ class Document
             case 'DOMText':
                 return $node->data;
 
+            case 'DOMComment':
+                return new Element($node);
+
+            case 'DOMCdataSection':
+                return new Element($node);
+
             case 'DOMAttr':
                 return $node->value;
         }
@@ -462,7 +503,7 @@ class Document
     }
 
     /**
-     * Searches for an node in the DOM tree for a given XPath expression.
+     * Searches for a node in the DOM tree for a given XPath expression.
      *
      * @param string      $expression  XPath expression
      * @param bool        $wrapNode    Returns array of \DiDom\Element if true, otherwise array of \DOMElement
@@ -485,15 +526,23 @@ class Document
      */
     public function count($expression, $type = Query::TYPE_CSS)
     {
-        $xpath = new DOMXPath($this->document);
-
-        $xpath->registerNamespace("php", "http://php.net/xpath");
-        $xpath->registerPhpFunctions();
-
         $expression = Query::compile($expression, $type);
         $expression = sprintf('count(%s)', $expression);
 
-        return (int) $xpath->evaluate($expression);
+        return (int) $this->createXpath()->evaluate($expression);
+    }
+
+    /**
+     * @return DOMXPath
+     */
+    public function createXpath()
+    {
+        $xpath = new DOMXPath($this->document);
+
+        $xpath->registerNamespace('php', 'http://php.net/xpath');
+        $xpath->registerPhpFunctions();
+
+        return $xpath;
     }
 
     /**
@@ -549,7 +598,7 @@ class Document
     /**
      * Indicates if two documents are the same document.
      *
-     * @param Document|\DOMDocument $document The compared document
+     * @param \DiDom\Document|\DOMDocument $document The compared document
      *
      * @return bool
      *
@@ -557,7 +606,7 @@ class Document
      */
     public function is($document)
     {
-        if ($document instanceof self) {
+        if ($document instanceof Document) {
             $element = $document->getElement();
         } else {
             if (!$document instanceof DOMDocument) {
@@ -575,7 +624,7 @@ class Document
     }
 
     /**
-     * Returns the type of document (XML or HTML).
+     * Returns the type of the document (XML or HTML).
      *
      * @return string
      */
@@ -585,7 +634,7 @@ class Document
     }
 
     /**
-     * Returns the encoding of document (XML or HTML).
+     * Returns the encoding of the document (XML or HTML).
      *
      * @return string
      */
@@ -629,7 +678,7 @@ class Document
      */
     public function __toString()
     {
-        return $this->type === 'xml' ? $this->xml() : $this->html();
+        return $this->type === Document::TYPE_HTML ? $this->html() : $this->xml();
     }
 
     /**
@@ -641,6 +690,8 @@ class Document
      * @param \DOMElement|null $contextNode The node in which the search will be performed
      *
      * @return \DiDom\Element[]|\DOMElement[]
+     *
+     * @deprecated Not longer recommended, use Document::find() instead.
      */
     public function __invoke($expression, $type = Query::TYPE_CSS, $wrapNode = true, $contextNode = null)
     {

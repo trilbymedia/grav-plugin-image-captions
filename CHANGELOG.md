@@ -1,3 +1,9 @@
+# v2.0.2
+## mm/dd/2019
+
+1. [](#improved)
+  * Use `Page::getRawContent()` rather than `Page::content()` to stop any potential 'looping'
+
 # v2.0.1
 ## 04/23/2019
 

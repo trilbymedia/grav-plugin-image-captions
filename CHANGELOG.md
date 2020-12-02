@@ -1,3 +1,10 @@
+# v2.0.2
+## 12/02/2020
+
+1. [](#improved)
+  * Updated vendor libraries
+  * Use `Page::getRawContent()` rather than `Page::content()` to stop any potential 'looping'
+
 # v2.0.1
 ## 04/23/2019
 

@@ -78,7 +78,7 @@ class ImageCaptionsPlugin extends Plugin
             return;
         }
 
-        $content = $page->content();
+        $content = $page->getRawContent();
         $content = $this->processFigures($content);
         $page->setRawContent($content);
     }

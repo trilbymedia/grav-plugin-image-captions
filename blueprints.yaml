@@ -1,6 +1,8 @@
 name: Image Captions
-version: 2.0.1
-description: "Looks for images with defined title attribute and converts them to figcaptions."
+version: 2.0.2
+type: plugin
+slug: image-captions
+description: "Looks for images with defined title attribute and converts them to fig-captions."
 icon: image
 author:
   name: Trilby Media, LLC

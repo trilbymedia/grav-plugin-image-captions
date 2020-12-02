@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "imangazaliev/didom",
-            "version": "1.14.1",
+            "version": "1.16.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Imangazaliev/DiDOM.git",
-                "reference": "a8389cc26897f6bb8843363b4ea16e7ef16fb3c3"
+                "reference": "c88f5a562868d92b86d0b6aa8dfb30aa7f99977f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Imangazaliev/DiDOM/zipball/a8389cc26897f6bb8843363b4ea16e7ef16fb3c3",
-                "reference": "a8389cc26897f6bb8843363b4ea16e7ef16fb3c3",
+                "url": "https://api.github.com/repos/Imangazaliev/DiDOM/zipball/c88f5a562868d92b86d0b6aa8dfb30aa7f99977f",
+                "reference": "c88f5a562868d92b86d0b6aa8dfb30aa7f99977f",
                 "shasum": ""
             },
             "require": {
@@ -26,7 +26,6 @@
                 "php": ">=5.4"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "2.9",
                 "phpunit/phpunit": "^4.8"
             },
             "type": "library",
@@ -53,7 +52,11 @@
                 "parser",
                 "xml"
             ],
-            "time": "2019-01-17T11:01:36+00:00"
+            "support": {
+                "issues": "https://github.com/Imangazaliev/DiDOM/issues",
+                "source": "https://github.com/Imangazaliev/DiDOM/tree/1.16.1"
+            },
+            "time": "2020-11-16T10:57:57+00:00"
         }
     ],
     "packages-dev": [],
@@ -63,5 +66,6 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
 }

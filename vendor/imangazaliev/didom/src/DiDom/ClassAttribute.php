@@ -9,7 +9,7 @@ class ClassAttribute
     /**
      * The DOM element instance.
      *
-     * @var \DiDom\Element
+     * @var Element
      */
     protected $element;
 
@@ -24,15 +24,13 @@ class ClassAttribute
     protected $classes = [];
 
     /**
-     * Constructor.
+     * @param Element $element
      *
-     * @param \DiDom\Element $element
-     *
-     * @throws \InvalidArgumentException if passed argument is not an element node
+     * @throws InvalidArgumentException if parameter 1 is not an element node
      */
     public function __construct(Element $element)
     {
-        if (!$element->isElementNode()) {
+        if ( ! $element->isElementNode()) {
             throw new InvalidArgumentException(sprintf('The element must contain DOMElement node'));
         }
 
@@ -46,7 +44,7 @@ class ClassAttribute
      */
     protected function parseClassAttribute()
     {
-        if (!$this->element->hasAttribute('class')) {
+        if ( ! $this->element->hasAttribute('class')) {
             // possible if class attribute has been removed
             if ($this->classesString !== '') {
                 $this->classesString = '';
@@ -94,13 +92,13 @@ class ClassAttribute
     /**
      * @param string $className
      *
-     * @return \DiDom\ClassAttribute
+     * @return ClassAttribute
      *
-     * @throws \InvalidArgumentException if class name is not a string
+     * @throws InvalidArgumentException if class name is not a string
      */
     public function add($className)
     {
-        if (!is_string($className)) {
+        if ( ! is_string($className)) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 1 to be string, %s given', __METHOD__, (is_object($className) ? get_class($className) : gettype($className))));
         }
 
@@ -120,16 +118,16 @@ class ClassAttribute
     /**
      * @param array $classNames
      *
-     * @return \DiDom\ClassAttribute
+     * @return ClassAttribute
      *
-     * @throws \InvalidArgumentException if class name is not a string
+     * @throws InvalidArgumentException if class name is not a string
      */
     public function addMultiple(array $classNames)
     {
         $this->parseClassAttribute();
 
         foreach ($classNames as $className) {
-            if (!is_string($className)) {
+            if ( ! is_string($className)) {
                 throw new InvalidArgumentException(sprintf('Class name must be a string, %s given', (is_object($className) ? get_class($className) : gettype($className))));
             }
 
@@ -162,7 +160,7 @@ class ClassAttribute
      */
     public function contains($className)
     {
-        if (!is_string($className)) {
+        if ( ! is_string($className)) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 1 to be string, %s given', __METHOD__, (is_object($className) ? get_class($className) : gettype($className))));
         }
 
@@ -174,13 +172,13 @@ class ClassAttribute
     /**
      * @param string $className
      *
-     * @return \DiDom\ClassAttribute
+     * @return ClassAttribute
      *
-     * @throws \InvalidArgumentException if class name is not a string
+     * @throws InvalidArgumentException if class name is not a string
      */
     public function remove($className)
     {
-        if (!is_string($className)) {
+        if ( ! is_string($className)) {
             throw new InvalidArgumentException(sprintf('%s expects parameter 1 to be string, %s given', __METHOD__, (is_object($className) ? get_class($className) : gettype($className))));
         }
 
@@ -202,16 +200,16 @@ class ClassAttribute
     /**
      * @param array $classNames
      *
-     * @return \DiDom\ClassAttribute
+     * @return ClassAttribute
      *
-     * @throws \InvalidArgumentException if class name is not a string
+     * @throws InvalidArgumentException if class name is not a string
      */
     public function removeMultiple(array $classNames)
     {
         $this->parseClassAttribute();
 
         foreach ($classNames as $className) {
-            if (!is_string($className)) {
+            if ( ! is_string($className)) {
                 throw new InvalidArgumentException(sprintf('Class name must be a string, %s given', (is_object($className) ? get_class($className) : gettype($className))));
             }
 
@@ -232,7 +230,7 @@ class ClassAttribute
     /**
      * @param string[] $exclusions
      *
-     * @return \DiDom\ClassAttribute
+     * @return ClassAttribute
      */
     public function removeAll(array $exclusions = [])
     {
@@ -241,11 +239,11 @@ class ClassAttribute
         $preservedClasses = [];
 
         foreach ($exclusions as $className) {
-            if (!is_string($className)) {
+            if ( ! is_string($className)) {
                 throw new InvalidArgumentException(sprintf('Class name must be a string, %s given', (is_object($className) ? get_class($className) : gettype($className))));
             }
 
-            if (!in_array($className, $this->classes, true)) {
+            if ( ! in_array($className, $this->classes, true)) {
                 continue;
             }
 
@@ -260,7 +258,7 @@ class ClassAttribute
     }
 
     /**
-     * @return \DiDom\Element
+     * @return Element
      */
     public function getElement()
     {

@@ -1,3 +1,10 @@
+# v2.0.3
+## mm/dd/2021
+
+1. [](#improved)
+   * Improved default `scope` to ensure that existing `<figure>` tags are not double-processed
+   * Updated vendor libraries
+
 # v2.0.2
 ## 12/02/2020
 

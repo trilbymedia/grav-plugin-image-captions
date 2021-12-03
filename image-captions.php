@@ -120,7 +120,8 @@ class ImageCaptionsPlugin extends Plugin
                     $figure_classes = [$figure_class];
 
                     // If there are any `caption-*` classes on the image, add them to the figure
-                    foreach (explode(' ', $image->getAttribute('class')) as $class) {
+                    $image_classes = explode(' ', $image->getAttribute('class'));
+                    foreach ($image_classes as $class) {
                         if (preg_match('/^(caption-|figure-).*/', $class)) {
                             $figure_classes[] = $class;
                         }

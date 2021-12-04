@@ -3,6 +3,7 @@
 
 1. [](#improved)
    * Improved default `scope` to ensure that existing `<figure>` tags are not double-processed
+   * Alt attribute as the caption source [#15](https://github.com/trilbymedia/grav-plugin-image-captions/issues/15)
    * Updated vendor libraries
 
 # v2.0.2

@@ -1,5 +1,5 @@
 # v2.0.3
-## mm/dd/2021
+## 12/03/2021
 
 1. [](#improved)
    * Improved default `scope` to ensure that existing `<figure>` tags are not double-processed
